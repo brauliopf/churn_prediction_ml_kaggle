@@ -1,0 +1,28 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Streamlit",
+      "type": "debugpy",
+      "request": "launch",
+      // tell it how to run with streamlit
+      "module": "streamlit",
+      "args": [
+        "run",
+        "${workspaceFolder}/webapp/main.py"
+      ],
+      // run with .venv1 virtual environment
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "python": "${workspaceFolder}/.venv1/bin/python",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      // ser working directory as /webapp
+      "cwd": "${workspaceFolder}/webapp"
+    }
+  ]
+}
