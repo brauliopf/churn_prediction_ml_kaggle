@@ -97,3 +97,30 @@ def create_model_probability_chart(probabilities):
     )
     
     return fig
+
+def create_percentiles_chart(percentiles):
+    metrics = list(percentiles.keys())
+    perc_values = list(percentiles.values())
+
+    fig = go.Figure(data=[
+        go.Bar(y=metrics,
+            x=perc_values,
+            orientation='h',
+            text=[f"{p:.2%}" for p in perc_values],
+            textposition='auto')
+    ])
+
+    fig.update_layout(
+        title='Customer percentiles',
+        yaxis_title='Metric',
+        xaxis_title='Percentile',
+        xaxis=dict(
+            tickmode='array',
+            tickvals=[i/10 for i in range(11)],
+            ticktext=[f'{i}%' for i in range(0, 101, 10)]
+        ),
+        height=400,
+        margin=dict(l=20, r=20, t=40, b=20)
+    )
+
+    return fig

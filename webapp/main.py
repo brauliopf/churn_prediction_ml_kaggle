@@ -247,6 +247,27 @@ def compose_email(probability, input_dict, explanation, surname):
 
   return raw_response.choices[0].message.content   
 
+def display_customer_percentile(customer, everyone):
+  # get metrics
+  display_metrics = ['CreditScore', 'Age', 'Tenure', 'Balance', 'NumOfProducts', 'EstimatedSalary']
+
+  # calculate percentiles
+  percentiles = {}
+  for metric in display_metrics:
+    # sort context
+    values = np.sort(everyone[metric])
+    # get index
+    index = np.searchsorted(values, customer[metric])
+    # Calculate the percentile rank
+    percentiles[metric] = (index / len(values))
+
+  # plot chat
+  fig_percents = ut.create_percentiles_chart(percentiles)
+  st.plotly_chart(fig_percents, use_container_width=True)
+
+  return percentiles
+  
+
 def main():
   st.title("Customer Churn Prediction")
   
@@ -260,10 +281,10 @@ def main():
     selected_customer_id = int(selected_customer_option.split(" - ")[0])
     selected_customer = df.loc[df['CustomerId'] == selected_customer_id].iloc[0]
     input_df, input_dict = build_UI(selected_customer)
+    display_customer_percentile(selected_customer, df)
 
     load_models()
     avg_probability = make_predictions(input_df)
-    print('AVG PROB:', avg_probability)
     explanation = explain_prediction(avg_probability, input_dict, selected_customer['Surname'], df, "llama-3.1-70b-versatile")
     st.markdown("---")
     st.subheader("Explanation of Prediction")
