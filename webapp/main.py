@@ -121,9 +121,10 @@ def build_UI(selected_customer):
           min_value=0.0,
           value=float(selected_customer['EstimatedSalary']))
 
-      return prepare_input(credit_score, location, gender, age,
-                                          tenure, balance, num_products, has_credit_card,
-                                          is_active_member, estimated_salary)
+      input_fields = [credit_score, location, gender, age, tenure, balance,
+                num_products, has_credit_card, is_active_member, estimated_salary]
+
+      return input_fields
 
 def display_customer_percentile(customer, everyone):
   # get metrics
@@ -173,21 +174,24 @@ def load_object(object_path):
   with open(object_path, "rb") as file:
     return pickle.load(file)
 
-def make_predictions(input_df):
+def estimate_probabilities(input_df):
     '''Prints predictions and average of models: XGBoost w/ Feature Engineering, XGBoost, Random Forest, KNN.
     Returns the average of the predictions of the models'''
 
     scaler = load_object('../models/scaler_feate.pkl')
     input_df_feate = add_engineered_features(input_df)
-
     input_df_feate_scaled = scaler.transform(input_df_feate)
 
     probabilities = {
         'XGBoost': xgb_model.predict_proba(input_df)[0][1],
         'Random Forest': rfc_model.predict_proba(input_df)[0][1],
         'K-Nearest Neighbors': knn_model.predict_proba(input_df)[0][1],
-        'XGBoost w/ Feature Engineering': xgb_model_feate.predict_proba(input_df_feate_scaled)[0][1],
+        'XGBoost w/ Feature Engineering': xgb_model_feate.predict_proba(input_df_feate_scaled)[0][1]
     }
+
+    return probabilities
+
+def display_model_output(probabilities):
     avg_probability = np.mean(list(probabilities.values()))
 
     col1, col2 = st.columns(2)
@@ -314,11 +318,16 @@ def main():
   if selected_customer_option:
     selected_customer_id = int(selected_customer_option.split(" - ")[0])
     selected_customer = df.loc[df['CustomerId'] == selected_customer_id].iloc[0]
-    input_df, input_dict = build_UI(selected_customer)
+    input_fields = build_UI(selected_customer)
     display_customer_percentile(selected_customer, df)
 
     load_models()
-    avg_probability = make_predictions(input_df)
+    # input_fields:
+    # credit_score, location, gender, age, tenure, balance,
+    # num_products, has_credit_card, is_active_member, estimated_salary
+    input_df, input_dict = prepare_input(*input_fields)
+    probabilities = estimate_probabilities(input_df)
+    avg_probability = display_model_output(probabilities)
 
     explanation = explain_prediction(avg_probability, input_dict, selected_customer['Surname'], df, "llama-3.1-70b-versatile")
     st.markdown("---")
