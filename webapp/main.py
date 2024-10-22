@@ -13,6 +13,8 @@ import pickle
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
+import utils as ut
+from sklearn.preprocessing import StandardScaler
 
 load_dotenv()
 
@@ -22,18 +24,17 @@ client = OpenAI(
 )
 
 # FUNCTIONS
-def load_model(filename):
-  # open file as binary file and load with pickle
+def load_object(filename):
+  '''open file as binary file and load with pickle'''
   with open(filename, "rb") as file:
     return pickle.load(file)
 
 def load_models():
   '''Create global variables with specific models loaded from pkl files'''
-  models = ['xgb_model', 'gnb_model', 'rfc_model', 'tre_model', 'svm_model',
-          'knn_model', 'xgb_featureengineering', 'xgb_smote', 'xgb_ensemble_hard',
-          'xgb_ensemble_soft']
+  models = ['gnb_model', 'knn_model', 'lgr_model', 'rfc_model', 'svm_model', 'tre_model',
+          'xgb_ensemble_hard', 'xgb_ensemble_soft', 'xgb_model_feate', 'xgb_model', 'xgb_smote']
   for model_name in models:
-    globals()[model_name] = load_model(f"../models/{model_name}.pkl")
+    globals()[model_name] = load_object(f"../models/{model_name}.pkl")
 
 def prepare_input(credit_score, location, gender, age, tenure, balance,
                  num_products, has_credit_card, is_active_member,
@@ -52,86 +53,13 @@ def prepare_input(credit_score, location, gender, age, tenure, balance,
         'Geography_France': 1 if location == 'France' else 0,
         'Geography_Germany': 1 if location == 'Germany' else 0,
         'Geography_Spain': 1 if location == 'Spain' else 0,
-        'Gender_Male': 1 if gender == 'Male' else 0,
-        'Gender_Female': 1 if gender == 'Female' else 0
+        'Gender_Female': 1 if gender == 'Female' else 0,
+        'Gender_Male': 1 if gender == 'Male' else 0
     }
     
     input_df = pd.DataFrame([input_dict])
     return input_df, input_dict
 
-import utils as ut
-def make_predictions(input_df):
-    '''Prints 3 predictions and the average of 3 models: XGBoost, Random Forest, KNN.
-    Returns the average of the predictions of the 3 models'''
-    probabilities = {
-        'XGBoost': xgb_model.predict_proba(input_df)[0][1],
-        'Random Forest': rfc_model.predict_proba(input_df)[0][1],
-        'K-Nearest Neighbors': knn_model.predict_proba(input_df)[0][1],
-    }
-    avg_probability = np.mean(list(probabilities.values()))
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-       fig = ut.create_gauge_chart(avg_probability)
-       st.plotly_chart(fig, use_contaioner_width=True)
-       st.write(f"The customer has {avg_probability:.2%} probability of churning")
-
-    with col2:
-       fig_probs = ut.create_model_probability_chart(probabilities)
-       st.plotly_chart(fig_probs, use_container_width=True)
-
-    return avg_probability 
-
-def explain_prediction(probability, input_dict, surname, df, model="llama-3.2-3b-preview"):
-    '''Engage with an LLM to explain the prediction of the machine learning model based on
-    feature importances and customer data, and summary statistics of churned and non-churned customers'''
-
-    prompt = f"""You are an expert data scientist at a bank, where you specialize in interpreting and explaining predictions of machine learning models.
-    You are given the probability of churn and must explain the model's prediction based on your assessment of the context: customer's information, the summary statistics of churned and non-churned customers, and the feature importances provided.
-
-    - Do not mention the probability of churning, or the machine learning model, or say anything like "Based on the machine learning model's prediction and top 10 most important features", just explain the prediction.
-    - Use the model's prediction. Do not make up your own assessment. Use this criteria:
-      - [Riosk of churning > 30%] Custoner is at risk ofhcuirning. Generate a 3 sentence explanation of why they are at risk of churning.
-      - [Risk of churning < 30%] Customer might not be at risk of churning. Generate a 2 sentence explanation of why they might not be at risk of churning.
-
-    Customer information is shared below.
-    
-    Customer information:
-    Name: {surname}
-    Risk of churning: {round(probability * 100, 1)}% (decimal: {probability})
-    General customer data: {input_dict}
-
-    Here are the machine learning model's top 10 most important features for predicting churn:
-          Feature             | Importance
-          --------------------------------
-          NumOfProducts       | 0.323888
-          IsActiveMember      | 0.164146
-          Age                 | 0.109550
-          Geography_Germany   | 0.091373
-          Balance             | 0.052786
-          Geography_France    | 0.046463
-          Gender_Female       | 0.045283
-          Geography_Spain     | 0.036855
-          CreditScore         | 0.035005
-          EstimatedSalary     | 0.032655
-          HasCrCard           | 0.031940
-          Tenure              | 0.030054
-          Gender_Male         | 0.000000
-"""
-
-    print("EXPLANATION PROMPT", prompt)
-
-    raw_response = client.chat.completions.create(
-        model=model,
-        messages=[{
-            "role": "user",
-            "content": prompt
-        }],
-    )
-
-    return raw_response.choices[0].message.content
-   
 def build_UI(selected_customer):
       '''
       Use 2 columns.
@@ -197,6 +125,133 @@ def build_UI(selected_customer):
                                           tenure, balance, num_products, has_credit_card,
                                           is_active_member, estimated_salary)
 
+def display_customer_percentile(customer, everyone):
+  # get metrics
+  display_metrics = ['CreditScore', 'Age', 'Tenure', 'Balance', 'NumOfProducts', 'EstimatedSalary']
+
+  # calculate percentiles
+  percentiles = {}
+  for metric in display_metrics:
+    # sort context
+    values = np.sort(everyone[metric])
+    # get index
+    index = np.searchsorted(values, customer[metric])
+    # Calculate the percentile rank
+    percentiles[metric] = (index / len(values))
+
+  # plot chat
+  fig_percents = ut.create_percentiles_chart(percentiles)
+  st.plotly_chart(fig_percents, use_container_width=True)
+
+  return percentiles
+
+def add_engineered_features(features):
+  eng_features = features.copy()
+  
+  eng_features['CLV'] = eng_features['Balance'] * eng_features['EstimatedSalary'] / 100000
+  eng_features['TenureByAge'] = eng_features['Tenure'] / eng_features['Age']
+  
+  # age group -> create bins 0,30,45,60,100
+  # initialize values
+  eng_features['AgeGroup_Adult'] = 0
+  eng_features['AgeGroup_Senior'] = 0
+  eng_features['AgeGroup_Elderly'] = 0
+  # set correct value
+  age = eng_features['Age'].iloc[0]
+  if(age < 30):
+      pass
+  elif age < 45:
+      eng_features['AgeGroup_Adult'] = 1
+  elif age < 60:
+      eng_features['AgeGroup_Senior'] = 1
+  else:
+      eng_features['AgeGroup_Elderly'] = 1
+  
+  return eng_features
+
+def load_object(object_path):
+  with open(object_path, "rb") as file:
+    return pickle.load(file)
+
+def make_predictions(input_df):
+    '''Prints predictions and average of models: XGBoost w/ Feature Engineering, XGBoost, Random Forest, KNN.
+    Returns the average of the predictions of the models'''
+
+    scaler = load_object('../models/scaler_feate.pkl')
+    input_df_feate = add_engineered_features(input_df)
+
+    input_df_feate_scaled = scaler.transform(input_df_feate)
+
+    probabilities = {
+        'XGBoost': xgb_model.predict_proba(input_df)[0][1],
+        'Random Forest': rfc_model.predict_proba(input_df)[0][1],
+        'K-Nearest Neighbors': knn_model.predict_proba(input_df)[0][1],
+        'XGBoost w/ Feature Engineering': xgb_model_feate.predict_proba(input_df_feate_scaled)[0][1],
+    }
+    avg_probability = np.mean(list(probabilities.values()))
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+       fig = ut.create_gauge_chart(avg_probability)
+       st.plotly_chart(fig, use_contaioner_width=True)
+       st.write(f"The customer has {avg_probability:.2%} probability of churning")
+
+    with col2:
+       fig_probs = ut.create_model_probability_chart(probabilities)
+       st.plotly_chart(fig_probs, use_container_width=True)
+
+    return avg_probability 
+
+def explain_prediction(probability, input_dict, surname, df, model="llama-3.2-3b-preview"):
+    '''Engage with an LLM to explain the prediction of the machine learning model based on
+    feature importances and customer data, and summary statistics of churned and non-churned customers'''
+
+    prompt = f"""You are an expert data scientist at a bank, where you specialize in interpreting and explaining predictions of machine learning models.
+    You are given the probability of churn and must explain the model's prediction based on your assessment of the context: customer's information, the summary statistics of churned and non-churned customers, and the feature importances provided.
+
+    - Do not mention the probability of churning, or the machine learning model, or say anything like "Based on the machine learning model's prediction and top 10 most important features", just explain the prediction.
+    - Use the model's prediction. Do not make up your own assessment. Use this criteria:
+      - [Riosk of churning > 30%] Custoner is at risk ofhcuirning. Generate a 3 sentence explanation of why they are at risk of churning.
+      - [Risk of churning < 30%] Customer might not be at risk of churning. Generate a 2 sentence explanation of why they might not be at risk of churning.
+
+    Customer information is shared below.
+    
+    Customer information:
+    Name: {surname}
+    Risk of churning: {round(probability * 100, 1)}% (decimal: {probability})
+    General customer data: {input_dict}
+
+    Here are the machine learning model's top 10 most important features for predicting churn:
+          Feature             | Importance
+          --------------------------------
+          NumOfProducts       | 0.323888
+          IsActiveMember      | 0.164146
+          Age                 | 0.109550
+          Geography_Germany   | 0.091373
+          Balance             | 0.052786
+          Geography_France    | 0.046463
+          Gender_Female       | 0.045283
+          Geography_Spain     | 0.036855
+          CreditScore         | 0.035005
+          EstimatedSalary     | 0.032655
+          HasCrCard           | 0.031940
+          Tenure              | 0.030054
+          Gender_Male         | 0.000000
+"""
+
+    print("EXPLANATION PROMPT", prompt)
+
+    raw_response = client.chat.completions.create(
+        model=model,
+        messages=[{
+            "role": "user",
+            "content": prompt
+        }],
+    )
+
+    return raw_response.choices[0].message.content
+
 def compose_email(probability, input_dict, explanation, surname):
   """
   Generates a personalized email to a customer based on their churn probability.
@@ -246,28 +301,7 @@ def compose_email(probability, input_dict, explanation, surname):
   print("\n\nEMAIL PROMPT", prompt)
 
   return raw_response.choices[0].message.content   
-
-def display_customer_percentile(customer, everyone):
-  # get metrics
-  display_metrics = ['CreditScore', 'Age', 'Tenure', 'Balance', 'NumOfProducts', 'EstimatedSalary']
-
-  # calculate percentiles
-  percentiles = {}
-  for metric in display_metrics:
-    # sort context
-    values = np.sort(everyone[metric])
-    # get index
-    index = np.searchsorted(values, customer[metric])
-    # Calculate the percentile rank
-    percentiles[metric] = (index / len(values))
-
-  # plot chat
-  fig_percents = ut.create_percentiles_chart(percentiles)
-  st.plotly_chart(fig_percents, use_container_width=True)
-
-  return percentiles
   
-
 def main():
   st.title("Customer Churn Prediction")
   
@@ -285,6 +319,7 @@ def main():
 
     load_models()
     avg_probability = make_predictions(input_df)
+
     explanation = explain_prediction(avg_probability, input_dict, selected_customer['Surname'], df, "llama-3.1-70b-versatile")
     st.markdown("---")
     st.subheader("Explanation of Prediction")
