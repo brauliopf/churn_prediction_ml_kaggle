@@ -5,6 +5,7 @@ import pickle
 import pandas as pd
 
 app = FastAPI()
+port = process.env.PORT || 4000;
 
 # functions
 def load_object(object_path):
@@ -100,4 +101,4 @@ async def predict(customer: Customer):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=2200)
+    uvicorn.run(app, host="0.0.0.0", port=4000)
