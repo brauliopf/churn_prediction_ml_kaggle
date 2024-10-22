@@ -5,7 +5,6 @@ import pickle
 import pandas as pd
 
 app = FastAPI()
-port = process.env.PORT || 4000;
 
 # functions
 def load_object(object_path):
