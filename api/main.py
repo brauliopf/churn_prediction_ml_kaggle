@@ -12,12 +12,12 @@ def load_object(object_path):
     return pickle.load(file)   
 
 # load prediction model and scaler
-model = load_object('../models/xgb_model_feate.pkl')
+model = load_object('./model/xgb_model_feate.pkl')
 feateng = True
 if(feateng):
-    scaler = load_object('../models/scaler_feate.pkl')
+    scaler = load_object('./model/scaler_feate.pkl')
 else:
-    scaler = load_object('../models/scaler.pkl')
+    scaler = load_object('./model/scaler.pkl')
 
 
 def digest_input(customer):
