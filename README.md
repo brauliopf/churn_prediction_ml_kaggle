@@ -4,8 +4,6 @@ In this repository, you'll find my solution to Project 1 from the Headstarter Ac
 
 ## Overview
 
-*** Provide a more detailed explanation of your project, its purpose, and its significance in the field of machine learning.
-
 This project's objective is to predict customer churn using a prediction ML model, trained and evaluated on data from a Kaggle dataset (View on Kaggle: [Churn for Bank Customers](https://www.kaggle.com/datasets/mathchi/churn-for-bank-customers)). All data is structured and labeled, so this is an exercise on supervised learning with classical prediction models. On top of that, I use generative AI to elaborate content that is based on parameters of the data and on the specific prediction.
 
 This solution has 3 components: (1) a Jupyter notebook, used to explore the dataset and to train and evaluate the prediction models; (2) a streamlit application, used to visualize the data, the predictions and to review the generated content; (3) a FastAPI to serve the prediction functionality.
