@@ -1,3 +1,4 @@
+*.pem
 .env
 .venv_api
 .venv1

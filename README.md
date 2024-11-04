@@ -11,16 +11,20 @@ This solution has 3 components: (1) a Jupyter notebook, used to explore the data
 ## Components
 
 ### Model training playgroud (Jupyter notebook)
+
 On main.ipynb, I perform an EDA, split and scale data, and train several different models. Following, I pick the best performing model (XGBoost) and apply feature engineering and tune the models's learning rate. All models are saved with pickle and made available to make predictions.
 
 ### WebApp (Streamlit application)
+
 Builds UI with Streamlit, loads models and gets predictions. Then it makes 2 completions with different models from GROQ to generate objective messages.
 
 ### API (FastAPI application)
+
 A FastAPI app with a single method (/predict) that loads a model from a pickle file, manipulates the input for scaling and preprocessing and makes the prediction.
 The API is hosted in render.com ([API URL](https://kaggle-churn-prediction-ml.onrender.com))
 
 ## Future Work
+
 - Improve model performance with hyperparameter tuning to addess class imbalance
 - Adapt webapp to use API
-- Deploy API to GCP or AWS (lower cost)
+- Deploy API to GCP or AWS
