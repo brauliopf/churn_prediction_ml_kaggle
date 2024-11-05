@@ -27,4 +27,61 @@ The API is hosted in render.com ([API URL](https://kaggle-churn-prediction-ml.on
 
 - Improve model performance with hyperparameter tuning to addess class imbalance
 - Adapt webapp to use API
-- Deploy API to GCP or AWS
+
+---
+
+# Deploy API to AWS
+
+## install pyenv
+
+sudo yum install git
+curl https://pyenv.run | bash
+vi ~/.bashrc
+export PYENV_ROOT="$HOME/.pyenv"
+    [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+    eval "$(pyenv init -)"
+
+## restart terminal
+
+source ~/.bashrc
+
+## Prepare environment before python (add dependencies)
+
+sudo yum update
+sudo yum install gcc make patch zlib-devel bzip2 bzip2-devel readline-devel sqlite sqlite-devel openssl11-devel tk-devel libffi-devel xz-devel
+
+## Install Pytohn
+
+pyenv install 3.11.6
+pyenv global 3.11.6
+
+## Install pip
+
+\*\*\* pip will be installed when you set up the python version as global (after the global method)
+
+## Run the server
+
+if **name** == "**main**":
+import uvicorn
+uvicorn.run(app, host="0.0.0.0", port=4000)
+
+## on Postman
+
+http://{server_public_ip}:{PORT}/predict
+
+## Keep the server alive
+
+tmux new -s head_wk1 :create new session head_wk1
+tmux ls :list all active sessions
+tmux kill-session -t head_wk1 :kill session head_wk1
+(Ctrl + B) + D :leave and keep session alive
+
+---
+
+** The free EC2 instance does not fit an XGBoost model. I used a Random Forest model instead, just for completeness of the project. The performance is not good. The project is ok on render.com: https://kaggle-churn-prediction-ml.onrender.com.**
+
+---
+
+References:
+
+- https://github.com/pyenv/pyenv/wiki#suggested-build-environment
