@@ -12,8 +12,8 @@ def load_object(object_path):
     return pickle.load(file)   
 
 # load prediction model and scaler
-model = load_object('./model/rfc_model.pkl')
-feateng = False
+model = load_object('./model/xgb_model_feate.pkl')
+feateng = True
 if(feateng):
     scaler = load_object('./model/scaler_feate.pkl')
 else:
