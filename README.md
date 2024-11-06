@@ -28,29 +28,32 @@ The API is hosted in render.com ([API URL](https://kaggle-churn-prediction-ml.on
 - Improve model performance with hyperparameter tuning to addess class imbalance
 - Adapt webapp to use API
 
----
-
 # Deploy API to AWS
 
 ## install pyenv
 
-sudo yum install git
-curl https://pyenv.run | bash
-vi ~/.bashrc
+`sudo yum install git`
+
+`curl https://pyenv.run | bash`
+
+`vi ~/.bashrc`
+
+```
 export PYENV_ROOT="$HOME/.pyenv"
     [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
     eval "$(pyenv init -)"
+```
 
-## restart terminal
-
-source ~/.bashrc
+`source ~/.bashrc #restart terminal`
 
 ## Prepare environment before python (add dependencies)
 
 sudo yum update
 sudo yum install gcc make patch zlib-devel bzip2 bzip2-devel readline-devel sqlite sqlite-devel openssl11-devel tk-devel libffi-devel xz-devel
 
-## Install Pytohn
+\*\*\* This will break on openssl11-devel
+
+## Install Python
 
 pyenv install 3.11.6
 pyenv global 3.11.6
@@ -71,14 +74,17 @@ http://{server_public_ip}:{PORT}/predict
 
 ## Keep the server alive
 
-tmux new -s head_wk1 :create new session head_wk1
-tmux ls :list all active sessions
-tmux kill-session -t head_wk1 :kill session head_wk1
-(Ctrl + B) + D :leave and keep session alive
+`tmux new -s head_wk1 :create new session head_wk1`
+
+`tmux ls :list all active sessions`
+
+`tmux kill-session -t head_wk1 :kill session head_wk1`
+
+`(Ctrl + B) + D :leave and keep session alive`
 
 ---
 
-** The free EC2 instance does not fit an XGBoost model. I used a Random Forest model instead, just for completeness of the project. The performance is not good. The project is ok on render.com: https://kaggle-churn-prediction-ml.onrender.com.**
+** The free EC2 instance does not fit the XGBoost module. I used a Random Forest model instead, just for completeness of the project. The performance is not good. The project is ok on render.com: https://kaggle-churn-prediction-ml.onrender.com.**
 
 ---
 
