@@ -72,6 +72,43 @@ uvicorn.run(app, host="0.0.0.0", port=4000)
 
 http://{server_public_ip}:{PORT}/predict
 
+Example request:
+
+POST: http://3.133.102.24:4000/predict
+
+Request body:
+
+```
+{
+  "CreditScore": 619,
+  "Age": 25,
+  "Tenure": 2,
+  "Balance": 0,
+  "NumOfProducts": 4,
+  "HasCrCard": 0,
+  "IsActiveMember": 0,
+  "EstimatedSalary": 101348.88,
+  "Geography": "France",
+  "Gender": "Female"
+}
+```
+
+Output:
+
+```
+{
+    "prediction": [
+        1
+    ],
+    "probability": [
+        [
+            0.36,
+            0.64
+        ]
+    ]
+}
+```
+
 ## Keep the server alive
 
 `tmux new -s head_wk1 :create new session head_wk1`
