@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import pickle
 import pandas as pd
 
+# initialize FastAPI app
 app = FastAPI()
 
 # functions
