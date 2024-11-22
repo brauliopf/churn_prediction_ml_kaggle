@@ -15,9 +15,9 @@ def load_object(object_path):
 # load prediction model and scaler
 model = load_object('./model/xgb_model_feate.pkl')
 feateng = True
-if(feateng):
-    scaler = load_object('./model/scaler_feate.pkl')
-else:
+scaler = load_object('./model/scaler_feate.pkl')
+
+if not feateng:
     scaler = load_object('./model/scaler.pkl')
 
 
